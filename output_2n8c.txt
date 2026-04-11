@@ -1,0 +1,69 @@
+============================================================
+FILE: mastodon-large.ndjson
+============================================================
+Total lines read:           27228181
+Bad JSON lines skipped:     0
+Posts with language:        26583380
+Posts without language:     644801
+Unique language codes:      188
+
+Top 20 language counts:
+en              22492294
+de              1635575
+es              385703
+fr              383728
+zh              289853
+nl              221422
+ru              189917
+ja              178651
+it              157979
+fi              131992
+pt              97310
+sv              47574
+ca              37845
+uk              35212
+zh-cn           33258
+en-us           28446
+th              27786
+pl              20800
+da              17559
+hu              13237
+
+Elapsed time for mastodon-large.ndjson: 93.440517 seconds
+
+============================================================
+FILE: bluesky-large.ndjson
+============================================================
+Total lines read:           77833047
+Bad JSON lines skipped:     0
+Posts with language:        77191325
+Posts without language:     641722
+Unique language codes:      216
+
+Top 20 language counts:
+en              72772745
+de              2103551
+es              635915
+fr              482958
+pt              269539
+pl              228583
+ja              227321
+fi              143567
+en-au           120529
+nl              109243
+it              80743
+sv              70383
+tr              65374
+sq              34802
+ak              33013
+ru              32590
+ko              29796
+el              29068
+zh              28821
+ar              27171
+
+Elapsed time for bluesky-large.ndjson: 128.573788 seconds
+
+############################################################
+Total program elapsed time: 222.020989 seconds
+############################################################
