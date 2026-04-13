@@ -5,8 +5,8 @@ from mpi4py import MPI
 
 # 1. Initialize MPI Environment
 comm = MPI.COMM_WORLD
-rank = comm.Get_rank()  # Unique ID for each process
-size = comm.Get_size()  # Total number of processes
+rank = comm.Get_rank()
+size = comm.Get_size()
 
 def process_byte_chunk(filename, start, end):
     """
@@ -40,10 +40,12 @@ def process_byte_chunk(filename, start, end):
                     if langs:
                         if isinstance(langs, list):
                             for l in langs:
-                                if l: # Ensure language code is not Null
-                                    local_counts[l] = local_counts.get(l, 0) + 1
+                                if l:
+                                    key = l.strip().lower()
+                                    local_counts[key] = local_counts.get(key, 0) + 1
                         else:
-                            local_counts[langs] = local_counts.get(langs, 0) + 1
+                            key = langs.strip().lower()
+                            local_counts[key] = local_counts.get(key, 0) + 1
                             
                 except (json.JSONDecodeError, UnicodeDecodeError, AttributeError):
                     # Skips ill-formatted lines or missing attributes
@@ -58,7 +60,7 @@ def process_byte_chunk(filename, start, end):
 if __name__ == "__main__":
     # Define files to process (ensure symbolic links are created on SPARTAN)
     target_files = ["mastodon-large.ndjson", "bluesky-large.ndjson"]
-    total_final_counts = {}
+    per_file_counts = {}
 
     # Start Timing: Synchronize all ranks before starting the clock
     comm.Barrier()
@@ -71,7 +73,7 @@ if __name__ == "__main__":
                 file_size = os.path.getsize(filename)
                 chunk_size = file_size // size
                 offsets = [(i * chunk_size, (i + 1) * chunk_size) for i in range(size)]
-                offsets[-1] = (offsets[-1][0], file_size) # Ensure the last chunk reaches EOF
+                offsets[-1] = (offsets[-1][0], file_size)
             else:
                 offsets = [(0, 0)] * size
         else:
@@ -91,26 +93,35 @@ if __name__ == "__main__":
 
         # Rank 0 merges results for the current file
         if rank == 0:
+            file_counts = {}
             for partial_dict in all_results:
                 for lang, count in partial_dict.items():
-                    total_final_counts[lang] = total_final_counts.get(lang, 0) + count
+                    file_counts[lang] = file_counts.get(lang, 0) + count
+            per_file_counts[filename] = file_counts
 
     # 4. Final Output (Only on Rank 0)
     if rank == 0:
         end_time = MPI.Wtime()
         total_duration = end_time - start_time
         
-        print("\n" + "="*45)
-        print(f"FINAL EXECUTION REPORT")
-        print("="*45)
+        print("\n" + "=" * 60)
+        print("FINAL EXECUTION REPORT")
+        print("=" * 60)
         print(f"Total Execution Time: {total_duration:.4f} seconds")
-        print("-" * 45)
-        print(f"{'Language':<15} | {'Frequency (#posts)':<20}")
-        print("-" * 45)
         
-        # Sort by frequency descending and show Top 10
-        sorted_langs = sorted(total_final_counts.items(), key=lambda x: x[1], reverse=True)
-        for lang, count in sorted_langs[:10]:
-            print(f"{lang:<15} | {count:<20,}")
+        for filename, counts in per_file_counts.items():
+            label = "Mastodon" if "mastodon" in filename.lower() else "BlueSky"
+            sorted_langs = sorted(counts.items(), key=lambda x: x[1], reverse=True)
             
-        print("="*45)
+            print("\n" + "-" * 60)
+            print(f"{label} Languages (from {filename})")
+            print("-" * 60)
+            print(f"{'Rank':<6} {'Language':<15} {'Frequency (#posts)':<20}")
+            print("-" * 60)
+            
+            for i, (lang, count) in enumerate(sorted_langs[:10], 1):
+                print(f"{i:<6} {lang:<15} {count:<20,}")
+            
+            print(f"\nTotal unique languages in {label}: {len(counts)}")
+        
+        print("\n" + "=" * 60)
